@@ -48,6 +48,7 @@ class PrometheusProxyServer:
     def commit_loop(self):
         while True:
             time.sleep(5)
+            print('Looping...')
             try:
                 self._stat_operator_balance()
             except Exception as err:
@@ -56,12 +57,12 @@ class PrometheusProxyServer:
                              f'Type(err): {type(err)}, Error: {err}, Traceback: {err_tb}')
 
     def _stat_operator_balance(self):
-        sol_balances = self._solana.get_sol_balance_list(self._sol_accounts)
-        operator_sol_balance = dict(zip(self._sol_accounts, sol_balances))
+        # sol_balances = self._solana.get_sol_balance_list(self._sol_accounts)
+        operator_sol_balance = {}  # dict(zip(self._sol_accounts, sol_balances))
         for account, balance in operator_sol_balance.items():
             self._stat_exporter.stat_commit_operator_sol_balance(str(account), Decimal(balance) / 1_000_000_000)
 
-        neon_layouts = self._solana.get_neon_account_info_list(self._neon_accounts)
+        neon_layouts = []  # self._solana.get_neon_account_info_list(self._neon_accounts)
         for sol_account, neon_account, neon_layout in zip(self._operator_accounts, self._neon_accounts, neon_layouts):
             if neon_layout:
                 neon_balance = Decimal(neon_layout.balance) / 1_000_000_000 / 1_000_000_000

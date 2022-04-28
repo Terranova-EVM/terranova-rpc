@@ -4,7 +4,7 @@ import json
 import os
 import subprocess
 from logged_groups import logged_group, LogMng
-from solana.publickey import PublicKey
+# from solana.publickey import PublicKey
 from solana.account import Account as SolanaAccount
 from typing import Optional, List
 
@@ -89,6 +89,7 @@ class solana_cli(CliBase):
 
 @logged_group("neon.Proxy")
 def get_solana_accounts(*, logger) -> [SolanaAccount]:
+    return []  # FIXME: Add actual Terra operator accounts or something <nsomani>
     def read_sol_account(name) -> Optional[SolanaAccount]:
         if not os.path.isfile(name):
             return None
@@ -166,14 +167,16 @@ def read_elf_params(out_dict, *, logger):
 
 
 ELF_PARAMS = {}
-read_elf_params(ELF_PARAMS)
+# FIXME: CLI params reading <nsomani>
+# read_elf_params(ELF_PARAMS)
 COLLATERAL_POOL_BASE = ELF_PARAMS.get("NEON_POOL_BASE")
-NEON_TOKEN_MINT: PublicKey = PublicKey(ELF_PARAMS.get("NEON_TOKEN_MINT"))
-HOLDER_MSG_SIZE = int(ELF_PARAMS.get("NEON_HOLDER_MSG_SIZE"))
-CHAIN_ID = int(ELF_PARAMS.get('NEON_CHAIN_ID', None))
+# NEON_TOKEN_MINT: PublicKey = PublicKey(ELF_PARAMS.get("NEON_TOKEN_MINT"))
+HOLDER_MSG_SIZE = 2**10  # int(ELF_PARAMS.get("NEON_HOLDER_MSG_SIZE"))
+CHAIN_ID = 1  # int(ELF_PARAMS.get('NEON_CHAIN_ID', None))
 NEON_EVM_VERSION = ELF_PARAMS.get("NEON_PKG_VERSION")
 NEON_EVM_REVISION = ELF_PARAMS.get('NEON_REVISION')
-NEON_COMPUTE_UNITS = int(ELF_PARAMS.get('NEON_COMPUTE_UNITS'))
-NEON_HEAP_FRAME = int(ELF_PARAMS.get('NEON_HEAP_FRAME'))
-NEON_ADDITIONAL_FEE = int(ELF_PARAMS.get('NEON_ADDITIONAL_FEE'))
-NEON_GAS_LIMIT_MULTIPLIER_NO_CHAINID = int(ELF_PARAMS.get('NEON_GAS_LIMIT_MULTIPLIER_NO_CHAINID'))
+# FIXME: No idea what units these are in <nsomani>
+NEON_COMPUTE_UNITS = 2**30  # int(ELF_PARAMS.get('NEON_COMPUTE_UNITS'))
+NEON_HEAP_FRAME = 2**10  # int(ELF_PARAMS.get('NEON_HEAP_FRAME'))
+NEON_ADDITIONAL_FEE = 0  # int(ELF_PARAMS.get('NEON_ADDITIONAL_FEE'))
+NEON_GAS_LIMIT_MULTIPLIER_NO_CHAINID = 1  # int(ELF_PARAMS.get('NEON_GAS_LIMIT_MULTIPLIER_NO_CHAINID'))

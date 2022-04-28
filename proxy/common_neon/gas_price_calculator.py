@@ -85,7 +85,9 @@ class GasPriceCalculator:
     def _start_update_gas_price(self) -> int:
         for retry in range(GET_SOL_PRICE_MAX_RETRIES):
             try:
-                price = self.pyth_network_client.get_price('Crypto.SOL/USD')
+                # price = self.pyth_network_client.get_price('Crypto.SOL/USD')
+                # FIXME: Get actual gas price
+                price = {'status': 1, 'price': 1}
                 if price['status'] != 1:  # tradable
                     raise RuntimeError('Price status is not tradable')
                 self.sol_price_usd = Decimal(price['price'])

@@ -8,6 +8,12 @@ Requirements (for Ubuntu 18.04):
 
 For run internal implementation for Ethereum tokens start proxy with:
 
+Terranova:
+
+```PROMETHEUS_MULTIPROC_DIR=$(mktemp -d) python -m proxy```
+
+Original command from Neon below:
+
 ```bash
 python3 -m venv venv
 source venv/bin/activate
