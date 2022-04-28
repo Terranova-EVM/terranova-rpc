@@ -56,7 +56,8 @@ class Proxy:
             exc_tb: Optional[TracebackType]) -> None:
         assert self.acceptors
         self.acceptors.shutdown()
-        self.indexer.terminate()
+        if self.indexer:
+            self.indexer.terminate()
         self.delete_pid_file()
 
 

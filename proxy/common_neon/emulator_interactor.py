@@ -5,19 +5,17 @@ from logged_groups import logged_group
 from typing import Optional, Dict, Any
 from ethereum.transactions import Transaction as NeonTrx
 
-from ..environment import neon_cli, NEON_TOKEN_MINT, CHAIN_ID
-
 from .errors import EthereumError
 from .types import NeonEmulatingResult
 
 
 @logged_group("neon.Proxy")
 def call_emulated(contract_id, caller_id, data=None, value=None, *, logger) -> NeonEmulatingResult:
-    output = emulator(contract_id, caller_id, data, value)
+    output = None  # emulator(contract_id, caller_id, data, value)
     logger.debug(f"Call emulated. contract_id: {contract_id}, caller_id: {caller_id}, data: {data}, value: {value}, return: {output}")
-    result = json.loads(output)
-    check_emulated_exit_status(result)
-    return result
+    # result = json.loads(output)
+    # check_emulated_exit_status(result)
+    # return result
 
 
 @logged_group("neon.Proxy")
@@ -291,7 +289,8 @@ def emulator(contract, sender, data, value):
     data = data or "none"
     value = value or ""
     try:
-        return neon_cli().call("emulate", "--token_mint", str(NEON_TOKEN_MINT), "--chain_id", str(CHAIN_ID), sender, contract, data, value)
+        pass
+        # return neon_cli().call("emulate", "--token_mint", str(NEON_TOKEN_MINT), "--chain_id", str(CHAIN_ID), sender, contract, data, value)
     except subprocess.CalledProcessError as err:
         msg, code = NeonCliErrorParser().execute('emulator', err)
         raise EthereumError(message=msg, code=code)

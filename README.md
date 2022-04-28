@@ -10,7 +10,7 @@ For run internal implementation for Ethereum tokens start proxy with:
 
 Terranova:
 
-```PROMETHEUS_MULTIPROC_DIR=$(mktemp -d) python -m proxy```
+```PROMETHEUS_MULTIPROC_DIR=$(mktemp -d) python -m proxy --hostname 127.0.0.1 --port 9090 --enable-web-server --plugins proxy.plugin.NeonRpcApiPlugin --num-workers=1```
 
 Original command from Neon below:
 

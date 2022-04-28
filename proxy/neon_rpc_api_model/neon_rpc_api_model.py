@@ -461,11 +461,12 @@ class NeonRpcApiModel:
 
         self._stat_tx_begin()
         try:
-            neon_tx_precheck_result = self.precheck(trx)
+            # FIXME: Implement raw ETH transaction <nsomani>
+            # neon_tx_precheck_result = self.precheck(trx)
 
-            tx_sender = NeonTxSender(self._db, self._solana, trx, steps=EVM_STEP_COUNT)
-            with OperatorResourceList(tx_sender):
-                tx_sender.execute(neon_tx_precheck_result)
+            # tx_sender = NeonTxSender(self._db, self._solana, trx, steps=EVM_STEP_COUNT)
+            # with OperatorResourceList(tx_sender):
+            #     tx_sender.execute(neon_tx_precheck_result)
 
             self._stat_tx_success()
             return eth_signature
