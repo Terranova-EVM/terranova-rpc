@@ -110,6 +110,8 @@ class NeonRpcApiPlugin(HttpWebServerBasePlugin):
 
     def handle_request(self, request: HttpParser) -> None:
         unique_req_id = self.get_unique_id()
+        print('=== NEW REQUEST ===')
+        print(request)
         with logging_context(req_id=unique_req_id):
             self.handle_request_impl(request)
             self.info("Request processed")

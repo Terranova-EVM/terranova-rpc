@@ -35,6 +35,8 @@ class RequestSolanaBlockList:
         self.latest_block = SolanaBlockInfo(slot=0)
 
     def execute(self) -> bool:
+        return True
+        # FIXME: Correctly get block list <nsomani>
         try:
             self._get_latest_db_block()
             if not self._get_solana_block_list():

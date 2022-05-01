@@ -19,23 +19,24 @@ from ..common_neon.solana_interactor import SolanaInteractor
 @logged_group("neon.Indexer")
 class IndexerDB:
     def __init__(self, solana: SolanaInteractor):
-        self._logs_db = LogsDB()
-        self._blocks_db = SolanaBlocksDB()
-        self._txs_db = NeonTxsDB()
-        self._account_db = NeonAccountDB()
-        self._costs_db = CostsDB()
+        # self._logs_db = LogsDB()
+        # self._blocks_db = SolanaBlocksDB()
+        # self._txs_db = NeonTxsDB()
+        # self._account_db = NeonAccountDB()
+        # self._costs_db = CostsDB()
         self._solana = solana
         self._block = SolanaBlockInfo(slot=0)
         self._tx_idx = 0
         self._starting_block = SolanaBlockInfo(slot=0)
 
-        self._constants = SQLDict(tablename="constants")
+        self._constants = {}  # SQLDict(tablename="constants")
         for k in ['min_receipt_slot', 'latest_slot', 'starting_slot']:
             if k not in self._constants:
                 self._constants[k] = 0
 
     def status(self) -> bool:
-        return self._logs_db.is_connected()
+        return True
+        # return self._logs_db.is_connected()
 
     def submit_transaction(self, neon_tx: NeonTxInfo, neon_res: NeonTxResultInfo, used_ixs: [SolanaIxSignInfo]):
         try:
@@ -57,9 +58,10 @@ class IndexerDB:
             self._tx_idx += 1
             self.debug(f'{neon_tx} {neon_res} {block}')
             neon_res.fill_block_info(block)
-            self._logs_db.push_logs(neon_res.logs, block)
+            # self._logs_db.push_logs(neon_res.logs, block)
             tx = NeonTxFullInfo(neon_tx=neon_tx, neon_res=neon_res, used_ixs=used_ixs)
-            self._txs_db.set_tx(tx)
+            # FIXME: Set TX in DB <nsomani>
+            # self._txs_db.set_tx(tx)
         except Exception as err:
             err_tb = "".join(traceback.format_tb(err.__traceback__))
             self.error('Exception on submitting transaction. ' +
@@ -115,7 +117,8 @@ class IndexerDB:
         self._constants['min_receipt_slot'] = slot
 
     def get_logs(self, from_block, to_block, addresses, topics, block_hash):
-        return self._logs_db.get_logs(from_block, to_block, addresses, topics, block_hash)
+        return []
+        # return self._logs_db.get_logs(from_block, to_block, addresses, topics, block_hash)
 
     def get_block_by_hash(self, block_hash: str) -> SolanaBlockInfo:
         return self._blocks_db.get_block_by_hash(block_hash)

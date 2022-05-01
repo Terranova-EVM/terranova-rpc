@@ -48,7 +48,6 @@ class PrometheusProxyServer:
     def commit_loop(self):
         while True:
             time.sleep(5)
-            print('Looping...')
             try:
                 self._stat_operator_balance()
             except Exception as err:
