@@ -9,10 +9,18 @@ from .errors import EthereumError
 from .types import NeonEmulatingResult
 
 
+# FIXME: Fix emulation for gas estimate <nsomani>
+
+
 @logged_group("neon.Proxy")
 def call_emulated(contract_id, caller_id, data=None, value=None, *, logger) -> NeonEmulatingResult:
-    output = None  # emulator(contract_id, caller_id, data, value)
+    # output = emulator(contract_id, caller_id, data, value)
+    output = {
+        # FIXME: Return the actual contract address <nsomani>
+        'result': '0000000000000000000000000000000000000000'
+    }
     logger.debug(f"Call emulated. contract_id: {contract_id}, caller_id: {caller_id}, data: {data}, value: {value}, return: {output}")
+    return output
     # result = json.loads(output)
     # check_emulated_exit_status(result)
     # return result

@@ -3,13 +3,20 @@ from typing import Optional
 from ..common_neon.utils import NeonTxResultInfo, NeonTxInfo, NeonTxFullInfo
 from ..indexer.base_db import BaseDB, DBQuery
 from ..indexer.utils import SolanaIxSignInfo
+from collections import defaultdict
 
 
-class SolanaNeonTxsDB(BaseDB):
-    def __init__(self):
-        BaseDB.__init__(self, 'solana_neon_transactions')
+# FIXME: Use Postgres DB <nsomani>
+# Dict[neon_sign, solana_sign]
+terra_terranova_tx_db = defaultdict(list)
+by_sol_sign = defaultdict(list)
+by_neon_sign = defaultdict(list)
 
+class SolanaNeonTxsDB:
     def set_txs(self, neon_sign: str, used_ixs: [SolanaIxSignInfo]):
+        for idx in used_ixs:
+            terra_terranova_tx_db[neon_sign].append(idx.sign)
+        return
         used_ixs = set(used_ixs)
         rows = []
         for ix in used_ixs:
@@ -22,6 +29,7 @@ class SolanaNeonTxsDB(BaseDB):
                 rows)
 
     def get_sol_sign_list_by_neon_sign(self, neon_sign: str) -> [str]:
+        return terra_terranova_tx_db[neon_sign]
         request = f'''
             SELECT sol_sign
               FROM {self._table_name} AS a
@@ -38,9 +46,9 @@ class SolanaNeonTxsDB(BaseDB):
         return [v[0] for v in values]
 
 
-class NeonTxsDB(BaseDB):
+class NeonTxsDB:
     def __init__(self):
-        BaseDB.__init__(self, 'neon_transactions')
+        # BaseDB.__init__(self, 'neon_transactions')
         self._column_lst = ['neon_sign', 'from_addr', 'sol_sign', 'slot', 'block_hash', 'idx', 'tx_idx',
                             'nonce', 'gas_price', 'gas_limit', 'to_addr', 'contract', 'value', 'calldata',
                             'v', 'r', 's', 'status', 'gas_used', 'return_value', 'logs']
@@ -71,6 +79,9 @@ class NeonTxsDB(BaseDB):
         return NeonTxFullInfo(neon_tx=neon_tx, neon_res=neon_res)
 
     def set_tx(self, tx: NeonTxFullInfo):
+        by_neon_sign[tx.neon_tx.sign].append(tx)
+        by_sol_sign[tx.neon_res.sol_sign].append(tx)
+        return
         row = [tx.neon_tx.sign, tx.neon_tx.addr, tx.neon_res.sol_sign]
         for idx, column in enumerate(self._column_lst):
             if column in ['neon_sign', 'from_addr', 'sol_sign', 'logs']:
@@ -97,6 +108,10 @@ class NeonTxsDB(BaseDB):
         self._sol_neon_txs_db.set_txs(tx.neon_tx.sign, tx.used_ixs)
 
     def get_tx_by_neon_sign(self, neon_sign) -> Optional[NeonTxFullInfo]:
+        lst = by_neon_sign[neon_sign]
+        if not lst:
+            return None
+        return lst[0]
         return self._tx_from_value(
             self._fetchone(DBQuery(
                 column_list=self._column_lst,
@@ -106,6 +121,10 @@ class NeonTxsDB(BaseDB):
         )
 
     def get_tx_list_by_sol_sign(self, sol_sign_list: [str]) -> [NeonTxFullInfo]:
+        lst = []
+        for sol_sign in sol_sign_list:
+            lst.extend(by_sol_sign[sol_sign])
+        return lst
         e = self._build_expression(DBQuery(
             column_list=self._column_lst,
             key_list=[],

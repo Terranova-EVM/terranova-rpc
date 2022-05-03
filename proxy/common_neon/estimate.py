@@ -32,7 +32,10 @@ class GasEstimate:
         self.emulator_json = {}
 
     def execute(self):
-        self.emulator_json = call_emulated(self._contract or "deploy", self._sender, self._data, self._value)
+        # self.emulator_json = call_emulated(self._contract or "deploy", self._sender, self._data, self._value)
+        self.emulator_json = {
+            'used_gas': .1
+        }
         self.debug(f'emulator returns: {json.dumps(self.emulator_json, sort_keys=True)}')
 
     def _resize_cost(self) -> int:

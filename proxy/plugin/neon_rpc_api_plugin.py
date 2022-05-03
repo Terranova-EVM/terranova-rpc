@@ -70,7 +70,7 @@ class NeonRpcApiPlugin(HttpWebServerBasePlugin):
         }
 
         def is_private_api(method_name: str) -> bool:
-            if method_name == 'eth_accounts':
+            if method_name in {'eth_accounts', 'eth_sendTransaction'}:
                 return False
             for prefix in ('eth_', 'net_', 'web3_', 'neon_'):
                 if method_name.startswith(prefix):

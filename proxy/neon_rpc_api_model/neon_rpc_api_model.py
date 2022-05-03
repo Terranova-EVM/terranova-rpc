@@ -29,6 +29,12 @@ from .transaction_validator import NeonTxValidator
 NEON_PROXY_PKG_VERSION = '0.7.21-dev'
 NEON_PROXY_REVISION = 'NEON_PROXY_REVISION_TO_BE_REPLACED'
 
+# FIXME: Get actual account balances <nsomani>
+ACCOUNT_BALANCES = {
+    "0x38ff0dc6321c1e7de65e150412bc945e8b6b1a81": 10
+}
+_CALLED_TX_RECEIPT = False
+_BLOCK_N = 0
 
 class JsonEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -182,7 +188,10 @@ class NeonRpcApiModel:
 
     def eth_blockNumber(self):
         slot = self._db.get_latest_block_slot()
-        return hex(slot)
+        global _BLOCK_N
+        if _CALLED_TX_RECEIPT:
+            _BLOCK_N += 10**5
+        return hex(slot + _BLOCK_N)
 
     def eth_getBalance(self, account: str, tag: str) -> str:
         """account - address to check for balance.
@@ -190,8 +199,9 @@ class NeonRpcApiModel:
         """
 
         self._validate_block_tag(tag)
+        # FIXME: Get actual balances <nsomani>
         account = self._normalize_account(account)
-
+        return hex(ACCOUNT_BALANCES.get(account, 0))
         try:
             neon_account_info = self._solana.get_neon_account_info(EthereumAddress(account))
             if neon_account_info is None:
@@ -199,6 +209,7 @@ class NeonRpcApiModel:
 
             return hex(neon_account_info.balance)
         except (Exception,):
+            print("Failed eth_getBalance")
             # self.debug(f"eth_getBalance: Can't get account info: {err}")
             return hex(0)
 
@@ -396,6 +407,24 @@ class NeonRpcApiModel:
         return result
 
     def eth_getTransactionReceipt(self, NeonTxId: str) -> Optional[dict]:
+        # FIXME: Get a real receipt <nsomani>
+        global _CALLED_TX_RECEIPT
+        _CALLED_TX_RECEIPT = True
+        return {
+            "transactionHash": "0x0000000000000000000000000000000000000000",
+            "transactionIndex": hex(5),
+            "type": "0x0",
+            "blockHash": "0x0000000000000000000000000000000000000000",
+            "blockNumber": hex(5),
+            "from": "0x0000000000000000000000000000000000000000",
+            "to": "0x0000000000000000000000000000000000000000",
+            "gasUsed": .1,
+            "cumulativeGasUsed": .1,
+            "contractAddress": "0x0000000000000000000000000000000000000000",
+            "logs": [],
+            "status": 3,
+            "logsBloom": "0x"+'0'*512
+        }
         neon_sign = self._normalize_tx_id(NeonTxId)
 
         tx = self._db.get_tx_by_neon_sign(neon_sign)

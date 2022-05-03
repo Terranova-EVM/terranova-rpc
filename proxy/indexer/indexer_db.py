@@ -21,7 +21,7 @@ class IndexerDB:
     def __init__(self, solana: SolanaInteractor):
         # self._logs_db = LogsDB()
         self._blocks_db = SolanaBlocksDB()
-        # self._txs_db = NeonTxsDB()
+        self._txs_db = NeonTxsDB()
         # self._account_db = NeonAccountDB()
         # self._costs_db = CostsDB()
         self._solana = solana
@@ -60,8 +60,7 @@ class IndexerDB:
             neon_res.fill_block_info(block)
             # self._logs_db.push_logs(neon_res.logs, block)
             tx = NeonTxFullInfo(neon_tx=neon_tx, neon_res=neon_res, used_ixs=used_ixs)
-            # FIXME: Set TX in DB <nsomani>
-            # self._txs_db.set_tx(tx)
+            self._txs_db.set_tx(tx)
         except Exception as err:
             err_tb = "".join(traceback.format_tb(err.__traceback__))
             self.error('Exception on submitting transaction. ' +
