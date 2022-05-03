@@ -37,7 +37,7 @@ class NeonRpcApiPlugin(HttpWebServerBasePlugin):
     """Extend in-built Web Server to add Reverse Proxy capabilities.
     """
 
-    SOLANA_PROXY_LOCATION: str = r'/solana$'
+    SOLANA_PROXY_LOCATION: str = r'/$'
     SOLANA_PROXY_PASS = [
         b'http://localhost:8545/'
     ]
@@ -70,6 +70,8 @@ class NeonRpcApiPlugin(HttpWebServerBasePlugin):
         }
 
         def is_private_api(method_name: str) -> bool:
+            if method_name == 'eth_accounts':
+                return False
             for prefix in ('eth_', 'net_', 'web3_', 'neon_'):
                 if method_name.startswith(prefix):
                     break
@@ -111,7 +113,7 @@ class NeonRpcApiPlugin(HttpWebServerBasePlugin):
     def handle_request(self, request: HttpParser) -> None:
         unique_req_id = self.get_unique_id()
         print('=== NEW REQUEST ===')
-        print(request)
+        print(request.body)
         with logging_context(req_id=unique_req_id):
             self.handle_request_impl(request)
             self.info("Request processed")

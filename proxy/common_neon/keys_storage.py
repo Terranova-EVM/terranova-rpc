@@ -48,6 +48,9 @@ class KeyStorage:
         return new_address
 
     def get_list(self) -> [EthereumAddress]:
+        if not self._key_list:
+            # FIXME: Remove this fake account creation <nsomani>
+            self.generate_new()
         return [EthereumAddress.from_private_key(bytes.fromhex(p)) for p in self._key_list]
 
     def get_key(self, address) -> Optional[EthereumAddress]:

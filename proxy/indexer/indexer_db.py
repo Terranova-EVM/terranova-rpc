@@ -20,7 +20,7 @@ from ..common_neon.solana_interactor import SolanaInteractor
 class IndexerDB:
     def __init__(self, solana: SolanaInteractor):
         # self._logs_db = LogsDB()
-        # self._blocks_db = SolanaBlocksDB()
+        self._blocks_db = SolanaBlocksDB()
         # self._txs_db = NeonTxsDB()
         # self._account_db = NeonAccountDB()
         # self._costs_db = CostsDB()
