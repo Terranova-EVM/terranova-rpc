@@ -18,7 +18,6 @@ Original command from Neon below:
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
-poetry install  # Added this in for Terranova since it is required for the Terra SDK
 python3 -m proxy --hostname 127.0.0.1 --port 9090 --enable-web-server --plugins proxy.plugin.NeonRpcApiPlugin --num-workers=1
 ```
 (for more information see [From command line using repo source](#from-command-line-using-repo-source)).
