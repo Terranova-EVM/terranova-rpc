@@ -51,7 +51,7 @@ MIN_OPERATOR_BALANCE_TO_ERR = max(int(os.environ.get("MIN_OPERATOR_BALANCE_TO_ER
 SKIP_PREFLIGHT = os.environ.get("SKIP_PREFLIGHT", "NO") == "YES"
 CONTRACT_EXTRA_SPACE = int(os.environ.get("CONTRACT_EXTRA_SPACE", 2048))
 EVM_STEP_COUNT = int(os.environ.get("EVM_STEP_COUNT", 750))  # number of evm-steps, performed by one iteration
-ENABLE_PRIVATE_API = os.environ.get("ENABLE_PRIVATE_API", "NO") == "YES"
+ENABLE_PRIVATE_API = True # os.environ.get("ENABLE_PRIVATE_API", "NO") == "YES"
 GATHER_STATISTICS = os.environ.get("GATHER_STATISTICS", "NO") == "YES"
 ALLOW_UNDERPRICED_TX_WITHOUT_CHAINID = os.environ.get("ALLOW_UNDERPRICED_TX_WITHOUT_CHAINID", "NO") == "YES"
 LOG_FULL_OBJECT_INFO = os.environ.get("LOG_FULL_OBJECT_INFO", "NO") == "YES"
@@ -172,7 +172,7 @@ ELF_PARAMS = {}
 COLLATERAL_POOL_BASE = ELF_PARAMS.get("NEON_POOL_BASE")
 # NEON_TOKEN_MINT: PublicKey = PublicKey(ELF_PARAMS.get("NEON_TOKEN_MINT"))
 HOLDER_MSG_SIZE = 2**10  # int(ELF_PARAMS.get("NEON_HOLDER_MSG_SIZE"))
-CHAIN_ID = 1  # int(ELF_PARAMS.get('NEON_CHAIN_ID', None))
+CHAIN_ID = 397  # int(ELF_PARAMS.get('NEON_CHAIN_ID', None))
 NEON_EVM_VERSION = ELF_PARAMS.get("NEON_PKG_VERSION")
 NEON_EVM_REVISION = ELF_PARAMS.get('NEON_REVISION')
 # FIXME: No idea what units these are in <nsomani>

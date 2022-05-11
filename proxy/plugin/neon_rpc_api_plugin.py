@@ -70,8 +70,6 @@ class NeonRpcApiPlugin(HttpWebServerBasePlugin):
         }
 
         def is_private_api(method_name: str) -> bool:
-            if method_name in {'eth_accounts', 'eth_sendTransaction'}:
-                return False
             for prefix in ('eth_', 'net_', 'web3_', 'neon_'):
                 if method_name.startswith(prefix):
                     break
@@ -152,7 +150,7 @@ class NeonRpcApiPlugin(HttpWebServerBasePlugin):
         except Exception as err:
             # traceback.print_exc()
             response = {'jsonrpc': '2.0', 'error': {'code': -32000, 'message': str(err)}}
-
+        print(f"Response: {response}")
         resp_time_ms = (time.time() - start_time)*1000  # convert this into milliseconds
 
         method = '---'

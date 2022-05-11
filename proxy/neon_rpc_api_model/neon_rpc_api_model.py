@@ -31,10 +31,11 @@ NEON_PROXY_REVISION = 'NEON_PROXY_REVISION_TO_BE_REPLACED'
 
 # FIXME: Get actual account balances <nsomani>
 ACCOUNT_BALANCES = {
-    "0x38ff0dc6321c1e7de65e150412bc945e8b6b1a81": 10
+    "0x38ff0dc6321c1e7de65e150412bc945e8b6b1a81": 10,
+    "0x85971eb6073d28edf8f013221071bdbb9deda1af": 5
 }
-_CALLED_TX_RECEIPT = False
-_BLOCK_N = 0
+# _CALLED_TX_RECEIPT = False
+# _BLOCK_N = 0
 
 class JsonEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -145,9 +146,9 @@ class NeonRpcApiModel:
 
     @staticmethod
     def _validate_block_tag(tag: str):
-        # if tag not in ("latest", "pending"):
-        #     self.debug(f"Block type '{tag}' is not supported yet")
-        #     raise EthereumError(message=f"Not supported block identifier: {tag}")
+        if tag not in ("latest", "pending"):
+            print(f"Block type '{tag}' is not supported yet")
+            raise EthereumError(message=f"Not supported block identifier: {tag}")
 
         if isinstance(tag, int):
             return
@@ -188,19 +189,21 @@ class NeonRpcApiModel:
 
     def eth_blockNumber(self):
         slot = self._db.get_latest_block_slot()
-        global _BLOCK_N
-        if _CALLED_TX_RECEIPT:
-            _BLOCK_N += 10**5
-        return hex(slot + _BLOCK_N)
+        # global _BLOCK_N
+        # if _CALLED_TX_RECEIPT:
+        #     _BLOCK_N += 10**5
+        # return hex(slot + _BLOCK_N)
+        return hex(slot)
 
     def eth_getBalance(self, account: str, tag: str) -> str:
         """account - address to check for balance.
            tag - integer block number, or the string "latest", "earliest" or "pending"
         """
-
-        self._validate_block_tag(tag)
+        # FIXME: Validate the block tag <nsomani>
+        # self._validate_block_tag(tag)
         # FIXME: Get actual balances <nsomani>
         account = self._normalize_account(account)
+        print(f"Asked for account balance for: {account} ({type(account)}")
         return hex(ACCOUNT_BALANCES.get(account, 0))
         try:
             neon_account_info = self._solana.get_neon_account_info(EthereumAddress(account))
@@ -209,8 +212,8 @@ class NeonRpcApiModel:
 
             return hex(neon_account_info.balance)
         except (Exception,):
-            print("Failed eth_getBalance")
-            # self.debug(f"eth_getBalance: Can't get account info: {err}")
+            # print("Failed eth_getBalance")
+            self.debug(f"eth_getBalance: Can't get account info: {err}")
             return hex(0)
 
     def eth_getLogs(self, obj):
@@ -248,6 +251,7 @@ class NeonRpcApiModel:
 
         sign_list = []
         gas_used = 0
+        print("Skip transaction: " + str(skip_transaction))
         if skip_transaction:
             tx_list = []
         else:
@@ -302,7 +306,7 @@ class NeonRpcApiModel:
             value = neon_cli().call('get-storage-at', account, position)
             return value
         except (Exception,):
-            # self.error(f"eth_getStorageAt: Neon-cli failed to execute: {err}")
+            self.error(f"eth_getStorageAt: Neon-cli failed to execute: {err}")
             return '0x00'
 
     def _get_block_by_hash(self, block_hash: str) -> SolanaBlockInfo:
@@ -337,6 +341,7 @@ class NeonRpcApiModel:
             tag - integer of a block number, or the string "earliest", "latest" or "pending", as in the default block parameter.
             full - If true it returns the full transaction objects, if false only the hashes of the transactions.
         """
+        print('ASKING FOR THE BLOCK FOR TAG: ' + tag)
         block = self._process_block_tag(tag)
         if block.slot is None:
             self.debug(f"Not found block by number {tag}")
@@ -383,7 +388,7 @@ class NeonRpcApiModel:
             neon_account_info = self._solana.get_neon_account_info(account)
             return hex(neon_account_info.trx_count)
         except (Exception,):
-            # self.debug(f"eth_getTransactionCount: Can't get account info: {err}")
+            self.debug(f"eth_getTransactionCount: Can't get account info: {err}")
             return hex(0)
 
     @staticmethod
@@ -408,8 +413,9 @@ class NeonRpcApiModel:
 
     def eth_getTransactionReceipt(self, NeonTxId: str) -> Optional[dict]:
         # FIXME: Get a real receipt <nsomani>
-        global _CALLED_TX_RECEIPT
-        _CALLED_TX_RECEIPT = True
+        # global _CALLED_TX_RECEIPT
+        # _CALLED_TX_RECEIPT = True
+        """
         return {
             "transactionHash": "0x0000000000000000000000000000000000000000",
             "transactionIndex": hex(5),
@@ -425,6 +431,7 @@ class NeonRpcApiModel:
             "status": 3,
             "logsBloom": "0x"+'0'*512
         }
+        """
         neon_sign = self._normalize_tx_id(NeonTxId)
 
         tx = self._db.get_tx_by_neon_sign(neon_sign)
@@ -480,13 +487,14 @@ class NeonRpcApiModel:
             return '0x'
 
     def eth_sendRawTransaction(self, rawTrx: str) -> str:
+        print("sendRawTransaction")
         try:
             trx = EthTrx.fromString(bytearray.fromhex(rawTrx[2:]))
         except (Exception,):
             raise InvalidParamError(message="wrong transaction format")
 
         eth_signature = '0x' + trx.hash_signed().hex()
-        self.debug(f"sendRawTransaction {eth_signature}: {json.dumps(trx.as_dict(), cls=JsonEncoder, sort_keys=True)}")
+        print(f"sendRawTransaction {eth_signature}: {json.dumps(trx.as_dict(), cls=JsonEncoder, sort_keys=True)}")
 
         self._stat_tx_begin()
         try:
