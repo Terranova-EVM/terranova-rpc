@@ -1,7 +1,7 @@
 import json
 import subprocess
 from logged_groups import logged_group
-
+import asyncio
 from typing import Optional, Dict, Any
 from ethereum.transactions import Transaction as NeonTrx
 
@@ -14,19 +14,23 @@ from ..neon_rpc_api_model.terra_utils import create_call_tx, query_evm_tx
 
 @logged_group("neon.Proxy")
 def call_emulated(contract_id, caller_id, data=None, value=None, *, logger) -> NeonEmulatingResult:
-    output = emulator(contract_id, caller_id, data, value) # re-comment this line
+    # output = emulator(contract_id, caller_id, data, value) # re-comment this line
     print("\n call_emulated:\n contract_id: {}, caller_id: {}, data: {}, value: {}".format(contract_id, caller_id, data, value))
     if value is None:
         send_value = 0
     else:
         send_value = value
     call_tx = create_call_tx(contract_id[2:], send_value, data[2:])
-    res = subprocess.call
+
+    # loop = asyncio.new_event_loop()
+    # asyncio.set_event_loop(loop)
+
     res = query_evm_tx(caller_id[2:], call_tx)
     print("call result: {}".format(res))
+    print("result: {}, type: {}".format(res["result"], type(res["result"])))
     output = {
         # FIXME: Return the actual contract address <nsomani>
-        'result': '0000000000000000000000000000000000000000'
+        'result': bytearray(res["result"]).hex()
     }
     logger.debug(f"Call emulated. contract_id: {contract_id}, caller_id: {caller_id}, data: {data}, value: {value}, return: {output}")
     return output
@@ -307,7 +311,7 @@ def emulator(contract, sender, data, value):
     value = value or ""
     try:
         pass
-        return neon_cli().call("emulate", "--token_mint", str(NEON_TOKEN_MINT), "--chain_id", str(CHAIN_ID), sender, contract, data, value)
+        # return neon_cli().call("emulate", "--token_mint", str(NEON_TOKEN_MINT), "--chain_id", str(CHAIN_ID), sender, contract, data, value)
     except subprocess.CalledProcessError as err:
         msg, code = NeonCliErrorParser().execute('emulator', err)
         raise EthereumError(message=msg, code=code)

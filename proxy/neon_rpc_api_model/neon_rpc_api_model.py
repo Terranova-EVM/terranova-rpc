@@ -2,7 +2,7 @@ import json
 import multiprocessing
 import traceback
 from typing import Optional, Union
-
+import rlp
 import sha3
 from logged_groups import logged_group
 from web3.auto import w3
@@ -22,11 +22,13 @@ from ..memdb.memdb import MemDB
 from ..common_neon.gas_price_calculator import GasPriceCalculator
 from ..statistics_exporter.proxy_metrics_interface import StatisticsExporter
 
-from .terra_utils import create_call_tx, query_evm_tx
+from .terra_utils import create_call_tx, query_evm_tx, query_evm_account, execute_evm_tx
 
 from .transaction_sender import NeonTxSender
 from .operator_resource_list import OperatorResourceList
 from .transaction_validator import NeonTxValidator
+from eth_account import Account
+from eth_account.messages import encode_defunct, encode_structured_data
 
 NEON_PROXY_PKG_VERSION = '0.7.21-dev'
 NEON_PROXY_REVISION = 'NEON_PROXY_REVISION_TO_BE_REPLACED'
@@ -207,17 +209,20 @@ class NeonRpcApiModel:
         # FIXME: Get actual balances <nsomani>
         account = self._normalize_account(account)
         print(f"Asked for account balance for: {account} ({type(account)}")
-        return hex(ACCOUNT_BALANCES.get(account, 0))
+        # return hex(ACCOUNT_BALANCES.get(account, 0))
         try:
-            neon_account_info = self._solana.get_neon_account_info(EthereumAddress(account))
-            if neon_account_info is None:
-                return hex(0)
+            res = query_evm_account(account[2:])
+            print("query_evm_account balance result: {}, type: {}, int(balance): {}".format(res["balance"], type(res["balance"]), int(res["balance"])))
+            return hex(77777777 * int(res["balance"]))
+            # neon_account_info = self._solana.get_neon_account_info(EthereumAddress(account))
+            # if neon_account_info is None:
+            #     return hex(0)
 
-            return hex(neon_account_info.balance)
-        except (Exception,):
-            # print("Failed eth_getBalance")
-            self.debug(f"eth_getBalance: Can't get account info: {err}")
-            return hex(0)
+            # return hex(neon_account_info.balance)
+        except Exception as e:
+            print("Failed eth_getBalance for account {}, exception: {}".format(account, e))
+            # self.debug(f"eth_getBalance: Can't get account info: {err}")
+            return hex(1234563333333333333333333)
 
     def eth_getLogs(self, obj):
         def to_list(items):
@@ -376,7 +381,26 @@ class NeonRpcApiModel:
             contract_id = obj.get('to', 'deploy')
             data = obj.get('data', "None")
             value = obj.get('value', 0)
-            return "0x"+call_emulated(contract_id, caller_id, data, value)['result']
+            
+            print("\n call_emulated:\n contract_id: {}, caller_id: {}, data: {}, value: {}".format(contract_id, caller_id, data, value))
+            if value is None:
+                send_value = 0
+            else:
+                send_value = value
+            call_tx = create_call_tx(contract_id[2:], send_value, data[2:])
+
+            # loop = asyncio.new_event_loop()
+            # asyncio.set_event_loop(loop)
+
+            res = query_evm_tx(caller_id[2:], call_tx)
+            print("call result: {}".format(res))
+            print("result: {}, type: {}".format(res["result"], type(res["result"])))
+            output = {
+                # FIXME: Return the actual contract address <nsomani>
+                'result': bytearray(res["result"]).hex()
+            }
+            
+            return "0x" + output['result']
         except EthereumError:
             raise
         except Exception as err:
@@ -384,15 +408,16 @@ class NeonRpcApiModel:
             raise
 
     def eth_getTransactionCount(self, account: str, tag: str) -> str:
-        self._validate_block_tag(tag)
-        account = self._normalize_account(account)
+        # self._validate_block_tag(tag)
+        # account = self._normalize_account(account)
 
-        try:
-            neon_account_info = self._solana.get_neon_account_info(account)
-            return hex(neon_account_info.trx_count)
-        except (Exception,):
-            self.debug(f"eth_getTransactionCount: Can't get account info: {err}")
-            return hex(0)
+        # try:
+        #     neon_account_info = self._solana.get_neon_account_info(account)
+        #     return hex(neon_account_info.trx_count)
+        # except (Exception,):
+        #     self.debug(f"eth_getTransactionCount: Can't get account info: {err}")
+        #     return hex(0)
+        return hex(0)
 
     @staticmethod
     def _get_transaction_receipt(tx) -> dict:
@@ -490,16 +515,31 @@ class NeonRpcApiModel:
             return '0x'
 
     def eth_sendRawTransaction(self, rawTrx: str) -> str:
-        print("sendRawTransaction")
+        print("sendRawTransaction, rawTrx: {}".format(rawTrx))
         try:
             trx = EthTrx.fromString(bytearray.fromhex(rawTrx[2:]))
         except (Exception,):
             raise InvalidParamError(message="wrong transaction format")
 
+        # Recover sender address
+        # message = encode_defunct(rlp.encode(trx.unsigned_msg())) # 0x3C70b53Ee4Cc04439e19fdB592362e37Db164b71
+        # message = encode_defunct(rlp.encode(trx)) # 0x9aB945371C75A53F1C3E27b1b3fA9f63fd2b71cF
+        # message = encode_defunct(trx.unsigned_msg()) # 0xa27e341B9CC5BEe69F17DEfABf060718dbFC3AF9
+        # message = encode_defunct(text=rawTrx) # 0x54fb2d777961Cba5f92faEAEB1D415A0E7B08144
+        # message = encode_defunct(trx)
+        # sender = Account.recover_message(message, vrs = (trx.v, trx.r, trx.s))
+        # sender = Account.recover_message(message, signature=trx.signature()) 
+
+        # sender = w3.eth.account.recover_message(message, vrs = (trx.v, trx.r, trx.s))
+
+        sender = w3.eth.account.recover_transaction(rawTrx) # This one is right
+        print("Recovered sender address: {}".format(sender))
+
         eth_signature = '0x' + trx.hash_signed().hex()
         print(f"sendRawTransaction {eth_signature}: {json.dumps(trx.as_dict(), cls=JsonEncoder, sort_keys=True)}")
 
         self._stat_tx_begin()
+
         try:
             # FIXME: Implement raw ETH transaction <nsomani>
             # neon_tx_precheck_result = self.precheck(trx)
@@ -507,7 +547,8 @@ class NeonRpcApiModel:
             # tx_sender = NeonTxSender(self._db, self._solana, trx, steps=EVM_STEP_COUNT)
             # with OperatorResourceList(tx_sender):
             #     tx_sender.execute(neon_tx_precheck_result)
-
+            res = execute_evm_tx(sender[2:], rlp.encode(trx))
+            print("execute_evm_tx result: {}".format(res))
             self._stat_tx_success()
             return eth_signature
 

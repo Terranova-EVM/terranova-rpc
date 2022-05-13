@@ -9,6 +9,8 @@ from terra_sdk.core.coins import Coins
 from sha3 import keccak_256
 import requests
 from time import sleep
+import asyncio
+
 terranova_contract = "terra128vhhjmu3vj0st3szrwnxh4m6h8rpq3hrftnlh"
 mnemonic = "remain yard rebuild eternal okay ginger deputy paper scatter square meadow manage filter present lend off shoe moral impact defy analyst present amateur enough"
 
@@ -38,30 +40,34 @@ class NoChainTrx(rlp.Serializable):
         return rlp.decode(s, NoChainTrx)
 
 def create_call_tx(to_address, value, tx_data):
-    # tx = NoChainTrx(
-    #     0, # nonce
-    #     1, # gas price
-    #     1000000, # gas limit
-    #     bytearray(bytes.fromhex(to_address)), # toAddress, ERC20simple deployed contract address
-    #     value, # value
-    #     bytearray(bytes.fromhex(tx_data))
-    # )
+    tx = NoChainTrx(
+        0, # nonce
+        1, # gas price
+        1000000, # gas limit
+        bytearray(bytes.fromhex(to_address)), # toAddress, ERC20simple deployed contract address
+        value, # value
+        bytearray(bytes.fromhex(tx_data))
+    )
 
-    # return rlp.encode(tx)
+    return rlp.encode(tx)
 
-    tx = bytearray()
+    # print("Constructing tx, to: {}, value: {}, tx_data: {}".format(to_address, value, tx_data))
+    # tx = bytearray()
 
-    tx += bytearray(rlp.encode(0, rlp.codec.big_endian_int))
-    tx += bytearray(rlp.encode(1, rlp.codec.big_endian_int))
-    tx += bytearray(rlp.encode(100000000000, rlp.codec.big_endian_int))
-    tx += bytearray(bytes.fromhex(to_address))
-    tx += bytearray(rlp.encode(int(value), rlp.codec.big_endian_int))
-    tx += bytearray(bytes.fromhex(to_address))
+    # tx.append(bytearray(rlp.encode(0, rlp.codec.big_endian_int)))
+    # tx.append(bytearray(rlp.encode(1, rlp.codec.big_endian_int)))
+    # tx.append(bytearray(rlp.encode(100000000000, rlp.codec.big_endian_int)))
+    # tx.append(bytearray(bytes.fromhex(to_address)))
+    # tx.append(bytearray(rlp.encode(int(value), rlp.codec.big_endian_int)))
+    # tx.append(bytearray(bytes.fromhex(to_address)))
 
-    print("Constructed tx: 0x{}".format(tx.hex()))
-    return tx 
+    # print("Constructed tx: 0x{}".format(tx.hex()))
+    # return tx
 
 def execute_evm_tx(caller, rlp_encoded_tx):
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+
     terra = LCDClient(
         url="https://bombay-lcd.terra.dev/",
         chain_id="bombay-12"
@@ -152,6 +158,10 @@ def execute_evm_tx(caller, rlp_encoded_tx):
         return result
 
 def query_evm_tx(caller, rlp_encoded_tx):
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    print("get event loop: {}".format(asyncio.get_event_loop()))
+
     terra = LCDClient(
         url="https://bombay-lcd.terra.dev/",
         chain_id="bombay-12"
@@ -167,14 +177,16 @@ def query_evm_tx(caller, rlp_encoded_tx):
     return result
 
 def query_evm_account(evm_address):
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
     terra = LCDClient(
         url="https://bombay-lcd.terra.dev/",
         chain_id="bombay-12"
     )
-
     query_json = {"query_evm_account": {
         "evm_address": list(bytes.fromhex(evm_address)),
     }}
+
     result = terra.wasm.contract_query(terranova_contract, query_json)
 
     return result
