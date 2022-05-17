@@ -11,8 +11,35 @@ import requests
 from time import sleep
 import asyncio
 
-terranova_contract = "terra128vhhjmu3vj0st3szrwnxh4m6h8rpq3hrftnlh"
-mnemonic = "remain yard rebuild eternal okay ginger deputy paper scatter square meadow manage filter present lend off shoe moral impact defy analyst present amateur enough"
+# terranova_contract = "terra128vhhjmu3vj0st3szrwnxh4m6h8rpq3hrftnlh"
+# terranova_contract = "terra19x84tsqwz84ltavt32p9yum6dhplpxkzqku485"
+
+# LocalTerra config
+lcd_url = "http://localhost:1317"
+lcd_chain_id = "localterra"
+mnemonic1 = "notice oak worry limit wrap speak medal online prefer cluster roof addict wrist behave treat actual wasp year salad speed social layer crew genius"
+mnemonic2 = "symbol force gallery make bulk round subway violin worry mixture penalty kingdom boring survey tool fringe patrol sausage hard admit remember broken alien absorb"
+mnemonic3 = "bounce success option birth apple portion aunt rural episode solution hockey pencil lend session cause hedgehog slender journey system canvas decorate razor catch empty"
+mnemonic4 = "cream sport mango believe inhale text fish rely elegant below earth april wall rug ritual blossom cherry detail length blind digital proof identify ride"
+mnemonic5 = "index light average senior silent limit usual local involve delay update rack cause inmate wall render magnet common feature laundry exact casual resource hundred"
+
+mnemonics = [mnemonic1, mnemonic2, mnemonic3, mnemonic4]
+terranova_contract = "terra10pyejy66429refv3g35g2t7am0was7ya7kz2a4"
+
+class mnemonic_cycler:
+    def __init__(self):
+        self.mnemonics = mnemonics
+        self.i = 0
+    
+    def next(self):
+        self.i = (self.i + 1) % len(self.mnemonics)
+        return self.mnemonics[self.i]
+
+# Testnet config
+# lcd_url = "https://bombay-lcd.terra.dev/"
+# lcd_chain_id = "bombay-12" 
+# mnemonic = "remain yard rebuild eternal okay ginger deputy paper scatter square meadow manage filter present lend off shoe moral impact defy analyst present amateur enough"
+# terranova_contract = "terra1wtc92tm2m940zvpa4m0a9vv7p0nj45aaaf2zh6"
 
 caller_evm_address = "B34e2213751c5d8e9a31355fcA6F1B4FA5bB6bE1"
 receiver_evm_address = "2e36b2970ab7A4C955eADD836585c21A087Ab904"
@@ -43,7 +70,7 @@ def create_call_tx(to_address, value, tx_data):
     tx = NoChainTrx(
         0, # nonce
         1, # gas price
-        1000000, # gas limit
+        100000000000000000000000000000000000, # gas limit
         bytearray(bytes.fromhex(to_address)), # toAddress, ERC20simple deployed contract address
         value, # value
         bytearray(bytes.fromhex(tx_data))
@@ -64,13 +91,24 @@ def create_call_tx(to_address, value, tx_data):
     # print("Constructed tx: 0x{}".format(tx.hex()))
     # return tx
 
-def execute_evm_tx(caller, rlp_encoded_tx):
+def get_block_number():
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
 
     terra = LCDClient(
-        url="https://bombay-lcd.terra.dev/",
-        chain_id="bombay-12"
+        url=lcd_url,
+        chain_id=lcd_chain_id
+    )
+
+    return int(terra.tendermint.block_info()['block']['header']['height'])
+
+def execute_evm_tx(caller, rlp_encoded_tx, mnemonic):
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+
+    terra = LCDClient(
+        url=lcd_url,
+        chain_id=lcd_chain_id
     )
 
     mk = MnemonicKey(mnemonic = mnemonic)
@@ -131,7 +169,7 @@ def execute_evm_tx(caller, rlp_encoded_tx):
 
             result = terra.tx.broadcast(execute_tx)
             print("Result from trying to store chunk {}: {}".format(i, result))
-            print("Sleeping 0.5 seconds")
+            # print("Sleeping 0.5 seconds")
             sleep(0.5)
         
         wallet = terra.wallet(mk)
@@ -163,8 +201,8 @@ def query_evm_tx(caller, rlp_encoded_tx):
     print("get event loop: {}".format(asyncio.get_event_loop()))
 
     terra = LCDClient(
-        url="https://bombay-lcd.terra.dev/",
-        chain_id="bombay-12"
+        url=lcd_url,
+        chain_id=lcd_chain_id
     )
 
     query_json = {"raw_ethereum_query": {
@@ -180,8 +218,8 @@ def query_evm_account(evm_address):
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     terra = LCDClient(
-        url="https://bombay-lcd.terra.dev/",
-        chain_id="bombay-12"
+        url=lcd_url,
+        chain_id=lcd_chain_id
     )
     query_json = {"query_evm_account": {
         "evm_address": list(bytes.fromhex(evm_address)),

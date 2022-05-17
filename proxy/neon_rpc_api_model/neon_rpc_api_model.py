@@ -22,7 +22,7 @@ from ..memdb.memdb import MemDB
 from ..common_neon.gas_price_calculator import GasPriceCalculator
 from ..statistics_exporter.proxy_metrics_interface import StatisticsExporter
 
-from .terra_utils import create_call_tx, query_evm_tx, query_evm_account, execute_evm_tx
+from .terra_utils import create_call_tx, mnemonic_cycler, query_evm_tx, query_evm_account, execute_evm_tx, get_block_number
 
 from .transaction_sender import NeonTxSender
 from .operator_resource_list import OperatorResourceList
@@ -57,8 +57,10 @@ class NeonRpcApiModel:
     def __init__(self):
         self._solana = SolanaInteractor(SOLANA_URL)
         self._db = MemDB(self._solana)
+        self.dummy_block = 0
+        self.transactions = {}
         self._stat_exporter: Optional[StatisticsExporter] = None
-
+        self.mnemonic_cycler = mnemonic_cycler()
         if PP_SOLANA_URL == SOLANA_URL:
             self.gas_price_calculator = GasPriceCalculator(self._solana, PYTH_MAPPING_ACCOUNT)
         else:
@@ -110,6 +112,7 @@ class NeonRpcApiModel:
         except EthereumError:
             raise
         except Exception as err:
+            return hex(100)
             err_tb = "".join(traceback.format_tb(err.__traceback__))
             self.error(f"Exception on eth_estimateGas: {err}: {err_tb}")
             raise
@@ -198,7 +201,11 @@ class NeonRpcApiModel:
         # if _CALLED_TX_RECEIPT:
         #     _BLOCK_N += 10**5
         # return hex(slot + _BLOCK_N)
-        return hex(slot)
+        # return hex(slot)
+        # self.dummy_block += 100
+        # return hex(self.dummy_block)
+        # return hex(get_block_number())
+        return hex(4)
 
     def eth_getBalance(self, account: str, tag: str) -> str:
         """account - address to check for balance.
@@ -213,7 +220,7 @@ class NeonRpcApiModel:
         try:
             res = query_evm_account(account[2:])
             print("query_evm_account balance result: {}, type: {}, int(balance): {}".format(res["balance"], type(res["balance"]), int(res["balance"])))
-            return hex(77777777 * int(res["balance"]))
+            return hex(int(res["balance"]))
             # neon_account_info = self._solana.get_neon_account_info(EthereumAddress(account))
             # if neon_account_info is None:
             #     return hex(0)
@@ -222,7 +229,7 @@ class NeonRpcApiModel:
         except Exception as e:
             print("Failed eth_getBalance for account {}, exception: {}".format(account, e))
             # self.debug(f"eth_getBalance: Can't get account info: {err}")
-            return hex(1234563333333333333333333)
+            return hex(0)
 
     def eth_getLogs(self, obj):
         def to_list(items):
@@ -279,7 +286,7 @@ class NeonRpcApiModel:
             "totalDifficulty": '0x20000',
             "extraData": "0x" + '0' * 63 + '1',
             "logsBloom": '0x' + '0' * 512,
-            "gasLimit": '0xec8563e271ac',
+            "gasLimit": '0xec8563e271ac00000000000000',
             "transactionsRoot": '0x' + '0' * 63 + '1',
             "receiptsRoot": '0x' + '0' * 63 + '1',
             "stateRoot": '0x' + '0' * 64 + '1',
@@ -378,7 +385,7 @@ class NeonRpcApiModel:
 
         try:
             caller_id = obj.get('from', "0x0000000000000000000000000000000000000000")
-            contract_id = obj.get('to', 'deploy')
+            contract_id = obj.get('to', '')
             data = obj.get('data', "None")
             value = obj.get('value', 0)
             
@@ -387,8 +394,13 @@ class NeonRpcApiModel:
                 send_value = 0
             else:
                 send_value = value
+            if contract_id == "deploy":
+                contract_id = ""
+
             call_tx = create_call_tx(contract_id[2:], send_value, data[2:])
 
+            if len(call_tx) > 500:
+                return ""
             # loop = asyncio.new_event_loop()
             # asyncio.set_event_loop(loop)
 
@@ -443,7 +455,7 @@ class NeonRpcApiModel:
         # FIXME: Get a real receipt <nsomani>
         # global _CALLED_TX_RECEIPT
         # _CALLED_TX_RECEIPT = True
-        """
+        
         return {
             "transactionHash": "0x0000000000000000000000000000000000000000",
             "transactionIndex": hex(5),
@@ -452,14 +464,14 @@ class NeonRpcApiModel:
             "blockNumber": hex(5),
             "from": "0x0000000000000000000000000000000000000000",
             "to": "0x0000000000000000000000000000000000000000",
-            "gasUsed": .1,
-            "cumulativeGasUsed": .1,
+            "gasUsed": 1,
+            "cumulativeGasUsed": 10,
             "contractAddress": "0x0000000000000000000000000000000000000000",
             "logs": [],
             "status": 3,
             "logsBloom": "0x"+'0'*512
         }
-        """
+        
         neon_sign = self._normalize_tx_id(NeonTxId)
 
         tx = self._db.get_tx_by_neon_sign(neon_sign)
@@ -494,13 +506,33 @@ class NeonRpcApiModel:
         return result
 
     def eth_getTransactionByHash(self, NeonTxId: str) -> Optional[dict]:
-        neon_sign = self._normalize_tx_id(NeonTxId)
-
-        tx = self._db.get_tx_by_neon_sign(neon_sign)
-        if tx is None:
+        tx_hash = NeonTxId
+        print("Getting tx of hash: {}".format(tx_hash))
+        # tx = self._db.get_tx_by_neon_sign(neon_sign)
+        res = self.transactions[tx_hash]
+        if res is None:
             self.debug("Not found receipt")
             return None
-        return self._get_transaction(tx)
+        result = {
+            "blockHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+            "blockNumber": "0x00000000000000000000000000000000",
+            "hash": tx_hash,
+            "transactionIndex": hex(5),
+            "type": "0x0",
+            "from": "0xB34e2213751c5d8e9a31355fcA6F1B4FA5bB6bE1",
+            "nonce": hex(0),
+            "gasPrice": 0,
+            "gas": 370000000,
+            "to": "0x" + "0" * 40,
+            "value": hex(0),
+            "input": "0x00000000000000000000000000000000",
+            "v": hex(0),
+            "r": hex(0),
+            "s": hex(0),
+        }
+
+        return result
+        # return self._get_transaction(tx)
 
     def eth_getCode(self, account: str, tag) -> str:
         self._validate_block_tag(tag)
@@ -509,10 +541,10 @@ class NeonRpcApiModel:
         try:
             code_info = self._solana.get_neon_code_info(account)
             if (not code_info) or (not code_info.code):
-                return '0x'
+                return '0xAA'
             return code_info.code
         except (Exception,):
-            return '0x'
+            return '0xAA'
 
     def eth_sendRawTransaction(self, rawTrx: str) -> str:
         print("sendRawTransaction, rawTrx: {}".format(rawTrx))
@@ -547,15 +579,20 @@ class NeonRpcApiModel:
             # tx_sender = NeonTxSender(self._db, self._solana, trx, steps=EVM_STEP_COUNT)
             # with OperatorResourceList(tx_sender):
             #     tx_sender.execute(neon_tx_precheck_result)
-            res = execute_evm_tx(sender[2:], rlp.encode(trx))
+            res = execute_evm_tx(sender[2:], rlp.encode(trx), self.mnemonic_cycler.next())
             print("execute_evm_tx result: {}".format(res))
             self._stat_tx_success()
-            return eth_signature
+            # return eth_signature
+            print("eth_signature: {}".format(eth_signature))
+            print("txhash: {}".format(res.txhash))
+            self.transactions['0x' + res.txhash.lower()] = res
+            return '0x' + res.txhash.lower()
+            # return eth_signature
 
         except PendingTxError as err:
             self._stat_tx_failed()
             self.debug(f'{err}')
-            return eth_signature
+            return res.txhash
         except EthereumError:
             self._stat_tx_failed()
             raise
