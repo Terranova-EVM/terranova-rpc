@@ -457,16 +457,16 @@ class NeonRpcApiModel:
         # _CALLED_TX_RECEIPT = True
         
         return {
-            "transactionHash": "0x0000000000000000000000000000000000000000",
+            "transactionHash": NeonTxId,
             "transactionIndex": hex(5),
             "type": "0x0",
-            "blockHash": "0x0000000000000000000000000000000000000000",
+            "blockHash": "0x1859fba22a1cf9444454ad2b3b51bfba8617265c99dc0b25e46b66c92e30ea08",
             "blockNumber": hex(5),
-            "from": "0x0000000000000000000000000000000000000000",
+            "from": "0xB34e2213751c5d8e9a31355fcA6F1B4FA5bB6bE1",
             "to": "0x0000000000000000000000000000000000000000",
             "gasUsed": 1,
             "cumulativeGasUsed": 10,
-            "contractAddress": "0x0000000000000000000000000000000000000000",
+            "contractAddress": "0x20860C72217cFD251369D73961227eD28434A033",
             "logs": [],
             "status": 3,
             "logsBloom": "0x"+'0'*512
@@ -516,7 +516,7 @@ class NeonRpcApiModel:
         result = {
             "blockHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
             "blockNumber": "0x00000000000000000000000000000000",
-            "hash": tx_hash,
+            "hash": res,
             "transactionIndex": hex(5),
             "type": "0x0",
             "from": "0xB34e2213751c5d8e9a31355fcA6F1B4FA5bB6bE1",
@@ -524,7 +524,7 @@ class NeonRpcApiModel:
             "gasPrice": 0,
             "gas": 370000000,
             "to": "0x" + "0" * 40,
-            "value": hex(0),
+            "value": "0x20860C72217cFD251369D73961227eD28434A033",
             "input": "0x00000000000000000000000000000000",
             "v": hex(0),
             "r": hex(0),
@@ -585,7 +585,7 @@ class NeonRpcApiModel:
             # return eth_signature
             print("eth_signature: {}".format(eth_signature))
             print("txhash: {}".format(res.txhash))
-            self.transactions['0x' + res.txhash.lower()] = res
+            self.transactions['0x' + res.txhash.lower()] = '0x' + res.txhash.lower()
             return '0x' + res.txhash.lower()
             # return eth_signature
 

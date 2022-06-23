@@ -24,8 +24,8 @@ mnemonic4 = "cream sport mango believe inhale text fish rely elegant below earth
 mnemonic5 = "index light average senior silent limit usual local involve delay update rack cause inmate wall render magnet common feature laundry exact casual resource hundred"
 
 mnemonics = [mnemonic1, mnemonic2, mnemonic3, mnemonic4]
-terranova_contract = "terra10pyejy66429refv3g35g2t7am0was7ya7kz2a4"
-
+# terranova_contract = "terra10pyejy66429refv3g35g2t7am0was7ya7kz2a4"
+terranova_contract = "terra18vd8fpwxzck93qlwghaj6arh4p7c5n896xzem5"
 class mnemonic_cycler:
     def __init__(self):
         self.mnemonics = mnemonics
